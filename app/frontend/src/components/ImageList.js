@@ -67,6 +67,22 @@ const ImageList = () => {
     }
   };
 
+  const deleteImage = (imageId) => {
+    Modal.confirm({
+      title: "Are you sure you want to delete this image?",
+      content: "This action cannot be undone.",
+      onOk: async () => {
+        try {
+          await axios.delete(`http://localhost:8000/delete/${imageId}`);
+          message.success("Image deleted successfully");
+          fetchImages(); // Refresh the list after deletion
+        } catch (error) {
+          message.error("Failed to delete the image");
+        }
+      },
+    });
+  };
+
   return (
     <div style={{ maxWidth: "100%", overflow: "auto" }}>
       <Title level={2}>Uploaded Images</Title>
@@ -102,7 +118,11 @@ const ImageList = () => {
                   <Button key="view" onClick={() => handleImageClick(item)}>
                     View Details
                   </Button>,
-                  <Button key="delete" type="danger">
+                  <Button
+                    key="delete"
+                    type="danger"
+                    onClick={() => deleteImage(item.id)}
+                  >
                     Delete Image
                   </Button>,
                 ]}

@@ -69,7 +69,7 @@ const App = () => {
         <Footer style={{ textAlign: "center" }} className="footer">
           AIQ ©2024 ~ Made by{" "}
           <a
-            href="https://www.github.com/dPacc"
+            href="https://github.com/dPacc/coin-challenge"
             target="_blank"
             rel="noopener noreferrer"
           >
