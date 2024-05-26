@@ -1,0 +1,1 @@
+# AIQ: Coin Challenge Client

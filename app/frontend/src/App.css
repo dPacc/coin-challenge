@@ -1,0 +1,125 @@
+.App {
+  text-align: center;
+}
+
+.App-logo {
+  height: 40vmin;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .App-logo {
+    animation: App-logo-spin infinite 20s linear;
+  }
+}
+
+.App-header {
+  background-color: #282c34;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: white;
+}
+
+.App-link {
+  color: #61dafb;
+}
+
+@keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh; /* Make sure the layout container is at least as tall as the viewport */
+}
+
+.site-layout-content {
+  flex: 1; /* Allows the content area to expand and fill the available space */
+  display: flex;
+  flex-direction: column; /* Ensures content within this div flows vertically */
+}
+
+.footer {
+  flex-shrink: 0; /* Prevents the footer from shrinking */
+}
+
+
+.layout-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* Ensures the logo and menu are spaced out */
+  background: cornflowerblue;
+}
+
+.logo {
+  flex: 0 1 auto; /* Allows the logo to grow and shrink but maintain its content's size */
+  height: 42px; /* Adjusts the height of the logo container */
+  display: flex;
+  align-items: center; /* Centers the logo vertically */
+}
+
+.logo img {
+  height: 100%; /* Makes the logo use the full height of its container */
+  padding-right: 20px; /* Adds some space between the logo and the menu */
+}
+
+.menu {
+  flex-grow: 1; /* Allows the menu to take up the remaining space */
+  display: flex;
+  justify-content: flex-end;
+  background: cornflowerblue;
+}
+
+.image-actions {
+  display: flex;
+  justify-content: space-between;
+}
+
+.image-details-modal {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+}
+
+.objects-list {
+  overflow-y: auto;
+  max-height: 300px;
+}
+
+.center-content {
+  text-align: center;
+  margin-top: 32px;
+}
+
+.image-preview {
+  width: 100%; /* Ensures the image takes up the full width of the column */
+  height: auto; /* Keeps the image's aspect ratio intact */
+  object-fit: contain; /* Ensures the image fits well within the given dimensions without being cut off */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Adds a subtle shadow around the image */
+  border-radius: 4px; /* Optionally adds rounded corners */
+  background: #fff; /* Adds a white background to better contrast images with transparent areas */
+  padding: 8px; /* Pads the image slightly within its container */
+}
+
+.image-details-modal {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%; /* Ensures the modal content uses the available space efficiently */
+}
+
+.objects-list {
+  overflow-y: auto; /* Makes the list scrollable */
+  max-height: 250px; /* Sets a maximum height for the list to ensure it does not take too much space */
+  margin-top: 16px; /* Adds some space above the list for visual separation */
+}
