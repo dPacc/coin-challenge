@@ -25,6 +25,8 @@ services:
       - "3000:3000"
     networks:
       - coin-challenge-network
+    environment:
+      REACT_APP_API_URL: "http://nginx/coin-api"
 
   adminer:
     image: adminer

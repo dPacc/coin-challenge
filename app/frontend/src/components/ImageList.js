@@ -30,7 +30,7 @@ const ImageList = () => {
   const fetchImages = async () => {
     setLoading(true);
     try {
-      const result = await axios("http://localhost:8000/images");
+      const result = await axios(`${process.env.REACT_APP_API_URL}/images`);
       setImages(result.data);
     } catch (error) {
       message.error("Failed to fetch images");
@@ -48,7 +48,9 @@ const ImageList = () => {
 
   const fetchObjects = async (imageId) => {
     try {
-      const result = await axios(`http://localhost:8000/objects/${imageId}`);
+      const result = await axios(
+        `${process.env.REACT_APP_API_URL}/objects/${imageId}`
+      );
       setObjects(result.data);
     } catch (error) {
       message.error("Failed to fetch object details");
@@ -58,7 +60,9 @@ const ImageList = () => {
   const handleObjectClick = async (objectId) => {
     setObjectDetailsLoading(true);
     try {
-      const result = await axios(`http://localhost:8000/object/${objectId}`);
+      const result = await axios(
+        `${process.env.REACT_APP_API_URL}/object/${objectId}`
+      );
       setSelectedObject(result.data);
     } catch (error) {
       message.error("Error fetching object details");
@@ -73,7 +77,9 @@ const ImageList = () => {
       content: "This action cannot be undone.",
       onOk: async () => {
         try {
-          await axios.delete(`http://localhost:8000/delete/${imageId}`);
+          await axios.delete(
+            `${process.env.REACT_APP_API_URL}/delete/${imageId}`
+          );
           message.success("Image deleted successfully");
           fetchImages(); // Refresh the list after deletion
         } catch (error) {

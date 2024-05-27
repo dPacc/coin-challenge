@@ -30,7 +30,7 @@ const UploadImage = () => {
 
     try {
       const response = await axios.post(
-        "http://localhost:8000/upload",
+        `${process.env.REACT_APP_API_URL}/upload`,
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },
@@ -50,7 +50,7 @@ const UploadImage = () => {
     setProcessing(true);
     try {
       const response = await axios.post(
-        `http://localhost:8000/process/${imageId}`,
+        `${process.env.REACT_APP_API_URL}/process/${imageId}`,
         { algorithm: selectedAlgorithm }
       );
       setObjects(response.data.objects);

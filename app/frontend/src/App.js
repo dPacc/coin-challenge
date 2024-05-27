@@ -9,7 +9,6 @@ import {
 import { Layout, Menu } from "antd";
 import UploadImage from "./components/UploadImage";
 import ImageList from "./components/ImageList";
-import ImageDetails from "./components/ImageDetails";
 import "./App.css";
 
 const { Header, Content, Footer } = Layout;
@@ -62,7 +61,6 @@ const App = () => {
             <Routes>
               <Route path="/" element={<UploadImage />} />
               <Route path="/images" element={<ImageList />} />
-              <Route path="/image/:id" element={<ImageDetails />} />
             </Routes>
           </div>
         </Content>
