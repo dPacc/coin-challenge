@@ -21,6 +21,7 @@ This project provides an API for detecting and segmenting circular objects in im
   - [Utility Functions](#utility-functions)
     - [Detection Algorithms](#detection-algorithms)
     - [Evaluation](#evaluation)
+  - [Running the Backend](#running-the-backend)
   - [Containerization](#containerization)
 
 ## Project Structure
@@ -154,6 +155,35 @@ The `detection_algorithms.py` file contains various functions for detecting and 
 ### Evaluation
 
 The `evaluation.py` file contains the `evaluate_model` function, which evaluates the performance of the object detection model on a given dataset. It calculates precision, recall, and F1 score based on the detected objects and ground truth annotations.
+
+## Running the Backend
+
+To run the backend locally, make sure you have Python and the required dependencies installed. Then, follow these steps:
+
+1. Navigate to the `backend` directory.
+2. Create a virtual environment (optional but recommended):
+
+    ```
+    python -m venv .env
+    source .env/bin/activate
+    ```
+
+3. Install the dependencies:
+
+    ```
+    pip install -r requirements.txt
+    ```
+
+4. Set the necessary environment variables for the database connection.
+5. Run the backend server:
+
+    ```
+    python app.py
+    ```
+
+    The backend server will start running at `http://localhost:8002`.
+
+Alternatively, you can run the backend using Docker Compose as described in the project root directory's README.
 
 ## Containerization
 
