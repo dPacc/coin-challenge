@@ -1,5 +1,4 @@
 version: "3"
-
 networks:
   coin-challenge-network:
     driver: bridge
@@ -14,6 +13,11 @@ services:
         condition: service_healthy
     networks:
       - coin-challenge-network
+    environment:
+      POSTGRES_DB: image_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_HOST: db
 
   frontend:
     build: ./frontend
