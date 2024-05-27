@@ -1,6 +1,7 @@
 version: "3"
+
 networks:
-  app-network:
+  coin-challenge-network:
     driver: bridge
 
 services:
@@ -12,14 +13,24 @@ services:
       db:
         condition: service_healthy
     networks:
-      - app-network
+      - coin-challenge-network
 
   frontend:
     build: ./frontend
     ports:
       - "3000:3000"
     networks:
-      - app-network
+      - coin-challenge-network
+
+  adminer:
+    image: adminer
+    ports:
+      - "8082:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - coin-challenge-network
 
   db:
     image: postgres
@@ -29,7 +40,7 @@ services:
     volumes:
       - ./data:/var/lib/postgresql/data
     networks:
-      - app-network
+      - coin-challenge-network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
