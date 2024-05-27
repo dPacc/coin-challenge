@@ -7,6 +7,7 @@ import {
   useLocation,
 } from "react-router-dom";
 import { Layout, Menu } from "antd";
+import { GithubOutlined } from "@ant-design/icons";
 import UploadImage from "./components/UploadImage";
 import ImageList from "./components/ImageList";
 import "./App.css";
@@ -28,12 +29,14 @@ const NavigationHeader = () => {
 
   return (
     <Header className="layout-header">
-      <div className="logo">
-        <img
-          src="https://aiqintelligence.ae/application/themes/aiqtheme/assets/images/logo.svg"
-          alt="AIQ Logo"
-        />
-      </div>
+      <Link to="/">
+        <div className="logo">
+          <img
+            src="https://aiqintelligence.ae/application/themes/aiqtheme/assets/images/logo.svg"
+            alt="AIQ Logo"
+          />
+        </div>
+      </Link>
       <Menu
         theme="dark"
         mode="horizontal"
@@ -47,6 +50,22 @@ const NavigationHeader = () => {
           <Link to="/images">Image List</Link>
         </Menu.Item>
       </Menu>
+      <div className="github-icon">
+        <a
+          href="https://github.com/dPacc/image-challenge"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <GithubOutlined
+            style={{
+              fontSize: "22px",
+              color: "black",
+              marginTop: "24px",
+              marginLeft: "16px",
+            }}
+          />
+        </a>
+      </div>
     </Header>
   );
 };
