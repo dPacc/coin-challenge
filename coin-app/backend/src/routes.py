@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from src import db
 from .models import Image, ObjectDetection
-from .utils import manual_circle_mask, hough_circle_detection, threshold_segmentation, contour_based_segmentation, evaluate_model
+from .utils import manual_circle_mask, hough_circle_detection, threshold_segmentation, contour_based_segmentation, evaluate_algorithm
 import cv2
 import numpy as np
 import base64
@@ -71,24 +71,30 @@ def process_image(image_id):
         algorithm = request.json['algorithm']
         mask = None
 
+        # Load the ground truth annotations from the JSON file
+        json_path = os.path.join('coin-dataset', '_annotations.coco.json')
+        with open(json_path, 'r') as file:
+            data = json.load(file)
+        annotations = [ann for ann in data['annotations'] if data['images'][ann['image_id']]['file_name'] == image.filename]
+
         if algorithm == 'manual':
-            json_path = os.path.join('coin-dataset', '_annotations.coco.json')
-            with open(json_path, 'r') as file:
-                data = json.load(file)
-            annotations = [ann for ann in data['annotations'] if data['images'][ann['image_id']]['file_name'] == image.filename]
             if not annotations:
                 return jsonify({'message': 'No annotations found for this image'})
             mask = manual_circle_mask(img, annotations)
-        elif algorithm == 'hough':
-            mask = hough_circle_detection(img)
-        elif algorithm == 'threshold':
-            mask = threshold_segmentation(img)
-        elif algorithm == 'contour':
-            mask = contour_based_segmentation(img)
+
+        elif algorithm in ['hough', 'threshold', 'contour']:
+            if algorithm == 'hough':
+                mask = hough_circle_detection(img)
+            elif algorithm == 'threshold':
+                mask = threshold_segmentation(img)
+            elif algorithm == 'contour':
+                mask = contour_based_segmentation(img)
+
         else:
             return jsonify({'message': 'Unsupported algorithm specified'})
-        
+
         objects = []
+        detections = []
         bbox_image = img.copy()
         if algorithm != 'manual':
             contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -102,16 +108,17 @@ def process_image(image_id):
                         image_id=image_id,
                         object_id=object_id,
                         bbox=[int(x) - radius, int(y) - radius, 2 * radius, 2 * radius],
-                        centroid=[int(x), int(y)],
+                        centroid=[center],
                         radius=radius
                     )
                     db.session.add(object_detection)
                     objects.append({
                         'id': object_id,
                         'bbox': [int(x) - radius, int(y) - radius, 2 * radius, 2 * radius],
-                        'centroid': [int(x), int(y)],
+                        'centroid': [center],
                         'radius': radius
                     })
+                    detections.append({'x': center[0], 'y': center[1], 'radius': radius})
                     cv2.circle(bbox_image, center, radius, (0, 255, 0), 2)
         else:
             for annotation in annotations:
@@ -133,7 +140,13 @@ def process_image(image_id):
                     'centroid': [center[0], center[1]],
                     'radius': radius
                 })
+                detections.append({'x': center[0], 'y': center[1], 'radius': radius})
                 cv2.rectangle(bbox_image, (x, y), (x + width, y + height), (0, 255, 0), 2)
+
+        # Prepare ground truths and evaluate if necessary
+        ground_truths = [{'x': ann['bbox'][0] + ann['bbox'][2] // 2, 'y': ann['bbox'][1] + ann['bbox'][3] // 2, 'radius': min(ann['bbox'][2], ann['bbox'][3]) // 2} for ann in annotations]
+        if algorithm != 'manual':
+            evaluation_metrics = evaluate_algorithm(ground_truths, detections)
         
         db.session.commit()
         
@@ -146,7 +159,8 @@ def process_image(image_id):
             'original_image': base64.b64encode(original_image).decode('utf-8'),
             'bbox_image': base64.b64encode(bbox_image_encoded).decode('utf-8'),
             'masked_image': base64.b64encode(masked_image).decode('utf-8'),
-            'objects': objects
+            'objects': objects,
+            'evaluation_metrics': evaluation_metrics if algorithm != 'manual' else None
         })
     else:
         return jsonify({'message': 'Image not found'})

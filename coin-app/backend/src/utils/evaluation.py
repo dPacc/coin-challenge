@@ -1,37 +1,52 @@
 import os
 import cv2
 import json
+import math
 
-def evaluate_model(dataset_folder):
-    json_path = os.path.join(dataset_folder, '_annotations.coco.json')
-    with open(json_path, 'r') as file:
-        data = json.load(file)
+def iou(circle1, circle2):
+    x1, y1, r1 = circle1['x'], circle1['y'], circle1['radius']
+    x2, y2, r2 = circle2['x'], circle2['y'], circle2['radius']
     
-    image_id_to_file = {image['id']: image['file_name'] for image in data['images']}
-    annotations_by_image = {ann['image_id']: [] for ann in data['annotations']}
-    for annotation in data['annotations']:
-        annotations_by_image[annotation['image_id']].append(annotation)
-    
-    total_objects = len(data['annotations'])
-    detected_objects = 0
-    
-    for image_id, annotations in annotations_by_image.items():
-        image_path = os.path.join(dataset_folder, image_id_to_file[image_id])
-        image = cv2.imread(image_path)
-        if image is None:
-            continue
+    center_distance = math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
+    radius_sum = r1 + r2
+
+    if center_distance >= radius_sum:
+        # The circles do not overlap
+        return 0
+    elif center_distance <= abs(r1 - r2):
+        # One circle is completely within the other
+        if r1 < r2:
+            # Circle1 is completely inside Circle2
+            return math.pi * r1 ** 2 / (math.pi * r2 ** 2)
+        else:
+            # Circle2 is completely inside Circle1
+            return math.pi * r2 ** 2 / (math.pi * r1 ** 2)
+    else:
+        # Partial overlap
+        d = center_distance  # Correct definition of d
+        part1 = r1**2 * math.acos((d**2 + r1**2 - r2**2) / (2 * d * r1))
+        part2 = r2**2 * math.acos((d**2 + r2**2 - r1**2) / (2 * d * r2))
+        part3 = 0.5 * math.sqrt((-d + r1 + r2) * (d + r1 - r2) * (d - r1 + r2) * (d + r1 + r2))
         
-        # Perform circular object detection and segmentation
-        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        circles = cv2.HoughCircles(gray, cv2.HOUGH_GRADIENT, 1.2, 100)
-        
-        if circles is not None:
-            detected_objects += len(circles[0])
+        intersection_area = part1 + part2 - part3
+        total_area = math.pi * (r1**2 + r2**2) - intersection_area
+        return intersection_area / total_area
     
-    precision = detected_objects / total_objects
-    recall = detected_objects / total_objects
-    f1_score = 2 * (precision * recall) / (precision + recall)
+def evaluate_algorithm(ground_truths, detections, iou_threshold=0.5):
+    true_positives = 0
+    for detection in detections:
+        for truth in ground_truths:
+            if iou(detection, truth) > iou_threshold:
+                true_positives += 1
+                break
     
+    total_predictions = len(detections)
+    total_actual = len(ground_truths)
+
+    precision = true_positives / total_predictions if total_predictions else 0
+    recall = true_positives / total_actual if total_actual else 0
+    f1_score = 2 * (precision * recall) / (precision + recall) if (precision + recall) else 0
+
     return {
         'precision': precision,
         'recall': recall,

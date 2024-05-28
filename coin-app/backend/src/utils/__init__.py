@@ -1,2 +1,2 @@
 from .detection_algorithms import manual_circle_mask, hough_circle_detection, threshold_segmentation, contour_based_segmentation
-from .evaluation import evaluate_model
+from .evaluation import  evaluate_algorithm

@@ -29,7 +29,7 @@ This project provides an API for detecting and segmenting circular objects in im
 The project follows a modular structure to separate concerns and improve maintainability. Here's an overview of the project structure:
 
 ```
-project/
+backend/
     |-- src/
     |   |-- models/
     |   |   |-- __init__.py
@@ -46,7 +46,8 @@ project/
     |
     |-- config.py
     |-- requirements.txt
-    |-- run.py
+    |-- Dockerfile
+    |-- app.py
 ```
 
 - The `app` package contains the Flask application.
