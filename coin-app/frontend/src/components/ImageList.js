@@ -1,247 +1,213 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import {
+  List,
+  Spin,
+  Modal,
+  Button,
+  message,
+  Card,
+  Row,
+  Col,
+  Typography,
+} from "antd";
 import axios from "axios";
-import { Button, message, Select, Table, Row, Col, Modal, Card } from "antd";
-import sample1 from "./sampleData/831ab469-f783-4cd1-9b10-649c374cbf11_jpg.rf.084159eeadebbd4f6ba1bb3030cca281.jpg";
-import sample2 from "./sampleData/903d67ad-9ad2-4c04-b618-fda5e031b896_jpg.rf.3a4394e8f301dd6ebc7a333d1598506b.jpg";
-import sample3 from "./sampleData/3870f109-9787-4ca1-b3a9-c55824c6dff4_jpg.rf.9758c5996665661b17d5a1938aa2a95f.jpg";
 
-const { Option } = Select;
+const { Title, Text } = Typography;
 
-const UploadImage = () => {
+const ImageList = () => {
+  const [images, setImages] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
-  const [selectedSampleImage, setSelectedSampleImage] = useState(null);
-  const [uploading, setUploading] = useState(false);
-  const [processing, setProcessing] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [objects, setObjects] = useState([]);
-  const [selectedAlgorithm, setSelectedAlgorithm] = useState("manual");
-  const [originalImage, setOriginalImage] = useState(null);
-  const [bboxImage, setBboxImage] = useState(null);
-  const [maskedImage, setMaskedImage] = useState(null);
-  // Modal States
-  const [modalVisible, setModalVisible] = useState(false);
-  const [modalImage, setModalImage] = useState(null);
+  const [selectedObject, setSelectedObject] = useState(null);
+  const [objectDetailsLoading, setObjectDetailsLoading] = useState(false);
 
-  const handleSampleImageClick = (sampleImage) => {
-    setSelectedSampleImage(sampleImage);
-    handleImageUpload(sampleImage);
-  };
+  useEffect(() => {
+    fetchImages();
+  }, []);
 
-  const handleImageUpload = async (sampleImage = null) => {
-    if (!selectedImage && !sampleImage) {
-      message.error("Please select an image first!");
-      return;
-    }
-
-    const formData = new FormData();
-    if (selectedImage) {
-      formData.append("image", selectedImage);
-    } else {
-      const response = await fetch(sampleImage);
-      const blob = await response.blob();
-      const fileName = sampleImage.split("/").pop();
-      const file = new File([blob], fileName, { type: "image/jpeg" });
-      formData.append("image", file);
-    }
-
-    setUploading(true);
-
+  const fetchImages = async () => {
+    setLoading(true);
     try {
-      const response = await axios.post(
-        `${process.env.REACT_APP_API_URL}/upload`,
-        formData,
-        {
-          headers: { "Content-Type": "multipart/form-data" },
-        }
-      );
-      message.success("Image uploaded successfully");
-      processImage(response.data.id);
+      const result = await axios(`${process.env.REACT_APP_API_URL}/images`);
+      setImages(result.data);
     } catch (error) {
-      message.error("Error uploading image");
-      console.error("Error uploading image:", error);
+      message.error("Failed to fetch images");
     } finally {
-      setUploading(false);
-    }
-  };
-
-  const processImage = async (imageId) => {
-    setProcessing(true);
-    try {
-      const response = await axios.post(
-        `${process.env.REACT_APP_API_URL}/process/${imageId}`,
-        { algorithm: selectedAlgorithm }
-      );
-      setObjects(response.data.objects);
-      setOriginalImage(
-        `data:image/jpeg;base64,${response.data.original_image}`
-      );
-      setBboxImage(`data:image/jpeg;base64,${response.data.bbox_image}`);
-      setMaskedImage(`data:image/jpeg;base64,${response.data.masked_image}`);
-      message.success("Image processed successfully");
-    } catch (error) {
-      message.error("Error processing image");
-      console.error("Error processing image:", error);
-    } finally {
-      setProcessing(false);
+      setLoading(false);
     }
   };
 
   const handleImageClick = (image) => {
-    setModalImage(image);
-    setModalVisible(true);
+    setSelectedImage(image);
+    setObjects([]);
+    setSelectedObject(null);
+    setIsModalOpen(true);
   };
 
-  const columns = [
-    {
-      title: "ID",
-      dataIndex: "id",
-      key: "id",
-    },
-    {
-      title: "Bounding Box",
-      dataIndex: "bbox",
-      key: "bbox",
-      render: (bbox) => JSON.stringify(bbox),
-    },
-    {
-      title: "Centroid",
-      dataIndex: "centroid",
-      key: "centroid",
-      render: (centroid) => JSON.stringify(centroid),
-    },
-    {
-      title: "Radius",
-      dataIndex: "radius",
-      key: "radius",
-    },
-  ];
+  const fetchObjects = async (imageId) => {
+    try {
+      const result = await axios(
+        `${process.env.REACT_APP_API_URL}/objects/${imageId}`
+      );
+      setObjects(result.data);
+    } catch (error) {
+      message.error("Failed to fetch object details");
+    }
+  };
 
-  const sampleImages = [
-    { src: sample1, alt: "Sample 1" },
-    { src: sample2, alt: "Sample 2" },
-    { src: sample3, alt: "Sample 3" },
-  ];
+  const handleObjectClick = async (objectId) => {
+    setObjectDetailsLoading(true);
+    try {
+      const result = await axios(
+        `${process.env.REACT_APP_API_URL}/object/${objectId}`
+      );
+      setSelectedObject(result.data);
+    } catch (error) {
+      message.error("Error fetching object details");
+    } finally {
+      setObjectDetailsLoading(false);
+    }
+  };
+
+  const deleteImage = (imageId) => {
+    Modal.confirm({
+      title: "Are you sure you want to delete this image?",
+      content: "This action cannot be undone.",
+      onOk: async () => {
+        try {
+          await axios.delete(
+            `${process.env.REACT_APP_API_URL}/delete/${imageId}`
+          );
+          message.success("Image deleted successfully");
+          fetchImages(); // Refresh the list after deletion
+        } catch (error) {
+          message.error("Failed to delete the image");
+        }
+      },
+    });
+  };
 
   return (
-    <div
-      style={{
-        maxWidth: "100%",
-        overflow: "auto",
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          marginTop: 16,
-          marginBottom: 32,
-        }}
-      >
-        <Row justify="center" style={{ width: "100%" }}>
-          <h1>Circular Object Segmentation</h1>
-        </Row>
-
-        <Row justify="center" style={{ width: "100%", marginBottom: 16 }}>
-          <Col>
-            <h3>Choose a sample image:</h3>
-          </Col>
-          {sampleImages.map((sample) => (
-            <Col key={sample.alt} style={{ marginLeft: 16 }}>
-              <img
-                src={sample.src}
-                alt={sample.alt}
-                style={{
-                  maxWidth: "100px",
-                  height: "auto",
-                  cursor: "pointer",
-                  border:
-                    selectedSampleImage === sample.src
-                      ? "2px solid #1890ff"
-                      : "none",
-                }}
-                onClick={() => handleSampleImageClick(sample.src)}
-              />
-            </Col>
-          ))}
-        </Row>
-
-        <Row justify="center" style={{ width: "100%" }}>
-          <input
-            type="file"
-            onChange={(e) => setSelectedImage(e.target.files[0])}
-            style={{ marginRight: 16 }}
-          />
-          <Select
-            value={selectedAlgorithm}
-            onChange={(value) => setSelectedAlgorithm(value)}
-            style={{ width: 200, marginRight: 16 }}
-          >
-            <Option value="manual">Manual</Option>
-            <Option value="hough">Hough Transform</Option>
-            <Option value="threshold">Threshold</Option>
-            <Option value="contour">Contour</Option>
-          </Select>
-          <Button
-            onClick={handleImageUpload}
-            loading={uploading || processing}
-            type="primary"
-            disabled={!selectedImage && !selectedSampleImage}
-          >
-            Upload and Process Image
-          </Button>
-        </Row>
-      </div>
-
-      {originalImage && bboxImage && maskedImage && (
-        <Row gutter={16} style={{ marginTop: 16 }}>
-          <Col span={8}>
-            <Card title="Original Image">
-              <img
-                src={originalImage}
-                alt="Original"
-                style={{ maxWidth: "400px", height: "auto", cursor: "pointer" }}
-                onClick={() => handleImageClick(originalImage)}
-              />
-            </Card>
-          </Col>
-          <Col span={8}>
-            <Card title="Image with Bounding Boxes & Unique Identifier (number)">
-              <img
-                src={bboxImage}
-                alt="Bounding Boxes"
-                style={{ maxWidth: "400px", height: "auto", cursor: "pointer" }}
-                onClick={() => handleImageClick(bboxImage)}
-              />
-            </Card>
-          </Col>
-          <Col span={8}>
-            <Card title="Masked Image">
-              <img
-                src={maskedImage}
-                alt="Masked"
-                style={{ maxWidth: "400px", height: "auto", cursor: "pointer" }}
-                onClick={() => handleImageClick(maskedImage)}
-              />
-            </Card>
-          </Col>
-        </Row>
+    <div style={{ maxWidth: "100%", overflow: "auto" }}>
+      <Title level={2}>Uploaded Images</Title>
+      {loading ? (
+        <Spin
+          size="large"
+          style={{ display: "flex", justifyContent: "center", marginTop: 20 }}
+        />
+      ) : (
+        <List
+          grid={{
+            gutter: 16,
+            xs: 1,
+            sm: 2,
+            md: 3,
+            lg: 4,
+            xl: 4,
+            xxl: 4,
+          }}
+          dataSource={images}
+          renderItem={(item) => (
+            <List.Item>
+              <Card
+                hoverable
+                cover={
+                  <img
+                    alt={item.filename}
+                    src={`data:image/png;base64,${item.data}`}
+                    style={{ maxHeight: 200, objectFit: "cover" }}
+                  />
+                }
+                actions={[
+                  <Button key="view" onClick={() => handleImageClick(item)}>
+                    View Details
+                  </Button>,
+                  <Button
+                    key="delete"
+                    type="danger"
+                    onClick={() => deleteImage(item.id)}
+                  >
+                    Delete Image
+                  </Button>,
+                ]}
+              >
+                <Card.Meta
+                  title={item.filename}
+                  description="Click 'View Details' to see more or 'Delete Image' to remove."
+                />
+              </Card>
+            </List.Item>
+          )}
+        />
       )}
 
       <Modal
-        visible={modalVisible}
+        title={`Details for ${selectedImage?.filename}`}
+        open={isModalOpen}
+        onCancel={() => setIsModalOpen(false)}
         footer={null}
-        onCancel={() => setModalVisible(false)}
+        width={800}
       >
-        <img src={modalImage} alt="Enlarged" style={{ width: "100%" }} />
+        <img
+          alt={selectedImage?.filename}
+          src={`data:image/jpeg;base64,${selectedImage?.data}`}
+          style={{ width: "100%", maxHeight: "200px", objectFit: "contain" }}
+        />
+        <Row gutter={16} style={{ marginTop: 16 }}>
+          <Col span={12} style={{ overflow: "auto", maxHeight: 300 }}>
+            <Title level={4}>Circular Objects</Title>
+            <Button onClick={() => fetchObjects(selectedImage.id)}>
+              Retrieve Objects
+            </Button>
+            {objects.length > 0 && (
+              <List
+                itemLayout="horizontal"
+                dataSource={objects}
+                renderItem={(item) => (
+                  <List.Item
+                    actions={[
+                      <Button onClick={() => handleObjectClick(item.id)}>
+                        View Details
+                      </Button>,
+                    ]}
+                  >
+                    <List.Item.Meta
+                      title={`Object ID: ${item.id}`}
+                      description={`Bounding Box: ${JSON.stringify(item.bbox)}`}
+                    />
+                  </List.Item>
+                )}
+              />
+            )}
+          </Col>
+          <Col span={12}>
+            {objectDetailsLoading ? (
+              <Spin
+                size="large"
+                style={{
+                  display: "flex",
+                  justifyContent: "center",
+                  marginTop: 20,
+                }}
+              />
+            ) : selectedObject ? (
+              <div>
+                <Title level={5}>Details of Selected Object</Title>
+                <p>Object ID: {selectedObject.id}</p>
+                <p>Bounding Box: {JSON.stringify(selectedObject.bbox)}</p>
+                <p>Centroid: {JSON.stringify(selectedObject.centroid)}</p>
+                <p>Radius: {selectedObject.radius}</p>
+              </div>
+            ) : (
+              <Text type="secondary">Select an object to view details.</Text>
+            )}
+          </Col>
+        </Row>
       </Modal>
-
-      {objects.length > 0 && (
-        <Card title="Detected Objects" style={{ marginTop: 16 }}>
-          <Table dataSource={objects} columns={columns} rowKey="id" />
-        </Card>
-      )}
     </div>
   );
 };
 
-export default UploadImage;
+export default ImageList;

@@ -17,14 +17,22 @@ const UploadImage = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [modalImage, setModalImage] = useState(null);
 
-  const handleImageUpload = async () => {
-    if (!selectedImage) {
+  const handleImageUpload = async (sampleImage = null) => {
+    if (!selectedImage && !sampleImage) {
       message.error("Please select an image first!");
       return;
     }
 
     const formData = new FormData();
-    formData.append("image", selectedImage);
+    if (selectedImage) {
+      formData.append("image", selectedImage);
+    } else {
+      const response = await fetch(sampleImage);
+      const blob = await response.blob();
+      const fileName = sampleImage.split("/").pop();
+      const file = new File([blob], fileName, { type: "image/jpeg" });
+      formData.append("image", file);
+    }
 
     setUploading(true);
 
@@ -138,6 +146,7 @@ const UploadImage = () => {
             onClick={handleImageUpload}
             loading={uploading || processing}
             type="primary"
+            disabled={!selectedImage}
           >
             Upload and Process Image
           </Button>
@@ -157,7 +166,7 @@ const UploadImage = () => {
             </Card>
           </Col>
           <Col span={8}>
-            <Card title="Image with Bounding Boxes">
+            <Card title="Image with Bounding Boxes & Unique Identifier (number)">
               <img
                 src={bboxImage}
                 alt="Bounding Boxes"
