@@ -10,6 +10,10 @@ import json
 
 main = Blueprint('main', __name__)
 
+@main.route('/', methods=['GET'])
+def index():
+    return jsonify({'message': 'Server running successfully'})
+
 @main.route('/upload', methods=['POST'])
 def upload_image():
     file = request.files['image']

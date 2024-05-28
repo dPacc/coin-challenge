@@ -52,7 +52,7 @@ const NavigationHeader = () => {
       </Menu>
       <div className="github-icon">
         <a
-          href="https://github.com/dPacc/image-challenge"
+          href="https://github.com/dPacc/coin-challenge"
           target="_blank"
           rel="noopener noreferrer"
         >
