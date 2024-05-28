@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from flask_restx import Api, Resource, reqparse
-from werkzeug.datastructures import FileStorage
+import werkzeug
 from src import db
 from .models import Image, ObjectDetection
 from .utils import manual_circle_mask, hough_circle_detection, threshold_segmentation, contour_based_segmentation, evaluate_model
