@@ -1,9 +1,12 @@
 version: "3"
+
+# Define the network used by all services in this setup
 networks:
   coin-challenge-network:
     driver: bridge
 
 services:
+  # Backend service configuration
   backend:
     build: ./backend
     ports:
@@ -19,6 +22,7 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_HOST: db
 
+  # Frontend service configuration
   frontend:
     build: ./frontend
     ports:
@@ -26,8 +30,10 @@ services:
     networks:
       - coin-challenge-network
     environment:
+      # URL to the backend service (In prod it would be /nginx/...)
       REACT_APP_API_URL: "http://localhost:8000"
 
+  # Adminer (Database management interface)
   adminer:
     image: adminer
     ports:
@@ -38,21 +44,38 @@ services:
     networks:
       - coin-challenge-network
 
+  # Database service configuration
   db:
     image: postgres
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: image_db
+    # Mounts the named volume 'pgdata' at the path specified
     volumes:
       - pgdata:/var/lib/postgresql/data
     networks:
       - coin-challenge-network
+    # Health check to ensure DB is ready
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
       timeout: 5s
       retries: 5
 
+  # Swagger UI service configuration
+  swagger-ui:
+    image: swaggerapi/swagger-ui
+    ports:
+      - "8081:8080"
+    volumes:
+      - ./swagger.yaml:/swagger.yaml
+    environment:
+      SWAGGER_JSON: /swagger.yaml
+    networks:
+      - coin-challenge-network
+
+# Volumes section for defining persistent storage
+# Named volume 'pgdata' used for storing PostgreSQL data persistently
 volumes:
   pgdata:
