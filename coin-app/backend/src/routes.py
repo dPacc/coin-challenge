@@ -61,7 +61,6 @@ def get_image(image_id):
     else:
         return jsonify({'message': 'Image not found'})
 
-
 # API for processing the image and returning the detected objects
 @main.route('/process/<int:image_id>', methods=['POST'])
 def process_image(image_id):
@@ -71,7 +70,7 @@ def process_image(image_id):
         img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
         algorithm = request.json['algorithm']
         mask = None
-        
+
         if algorithm == 'manual':
             json_path = os.path.join('coin-dataset', '_annotations.coco.json')
             with open(json_path, 'r') as file:
@@ -93,20 +92,50 @@ def process_image(image_id):
         bbox_image = img.copy()
         if algorithm != 'manual':
             contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-            for index, cnt in enumerate(contours, start=1):
+            for cnt in contours:
                 if cv2.contourArea(cnt) > 100:
                     (x, y), radius = cv2.minEnclosingCircle(cnt)
                     center = (int(x), int(y))
                     radius = int(radius)
                     object_id = f"{image_id}_{len(objects) + 1}"
+                    object_detection = ObjectDetection(
+                        image_id=image_id,
+                        object_id=object_id,
+                        bbox=[int(x) - radius, int(y) - radius, 2 * radius, 2 * radius],
+                        centroid=[int(x), int(y)],
+                        radius=radius
+                    )
+                    db.session.add(object_detection)
+                    objects.append({
+                        'id': object_id,
+                        'bbox': [int(x) - radius, int(y) - radius, 2 * radius, 2 * radius],
+                        'centroid': [int(x), int(y)],
+                        'radius': radius
+                    })
                     cv2.circle(bbox_image, center, radius, (0, 255, 0), 2)
-                    cv2.putText(bbox_image, str(index), (center[0], center[1]), cv2.FONT_HERSHEY_SIMPLEX, 1, (23, 247, 23), 2)
         else:
-            for index, annotation in enumerate(annotations, start=1):
+            for annotation in annotations:
                 x, y, width, height = annotation['bbox']
                 center = (x + width // 2, y + height // 2)
+                radius = min(width, height) // 2
+                object_id = f"{image_id}_{annotation['id']}"
+                object_detection = ObjectDetection(
+                    image_id=image_id,
+                    object_id=object_id,
+                    bbox=[x, y, width, height],
+                    centroid=[center[0], center[1]],
+                    radius=radius
+                )
+                db.session.add(object_detection)
+                objects.append({
+                    'id': object_id,
+                    'bbox': [x, y, width, height],
+                    'centroid': [center[0], center[1]],
+                    'radius': radius
+                })
                 cv2.rectangle(bbox_image, (x, y), (x + width, y + height), (0, 255, 0), 2)
-                cv2.putText(bbox_image, str(index), (center[0], center[1]), cv2.FONT_HERSHEY_SIMPLEX, 5, (23, 247, 23), 10)
+        
+        db.session.commit()
         
         # Encode the original image, image with bounding boxes, and masked image as base64 strings
         original_image = cv2.imencode('.jpg', img)[1].tostring()
