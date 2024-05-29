@@ -71,16 +71,25 @@ def process_image(image_id):
         algorithm = request.json['algorithm']
         mask = None
 
+        json_path = os.path.join('coin-dataset', '_annotations.coco.json')
+        with open(json_path, 'r') as file:
+            data = json.load(file)
+        annotations = [ann for ann in data['annotations'] if data['images'][ann['image_id']]['file_name'] == image.filename]
+
+        # Find the mask based on the specified algorithm
         if algorithm == 'manual':
-            json_path = os.path.join('coin-dataset', '_annotations.coco.json')
-            with open(json_path, 'r') as file:
-                data = json.load(file)
-            annotations = [ann for ann in data['annotations'] if data['images'][ann['image_id']]['file_name'] == image.filename]
             if not annotations:
                 return jsonify({'message': 'No annotations found for this image'})
             mask = manual_circle_mask(img, annotations)
         elif algorithm == 'hough':
-            mask = hough_circle_detection(img)
+            # Extract the required parameters from the annotations
+            radii = [min(ann['bbox'][2], ann['bbox'][3]) // 2 for ann in annotations]
+            min_radius = min(radii)
+            max_radius = max(radii)
+            dp = 1.2
+            min_dist = min(img.shape[:2]) // 4
+            
+            mask = hough_circle_detection(img, min_radius, max_radius, dp, min_dist)
         elif algorithm == 'contour':
             mask = contour_based_segmentation(img)
         else:
@@ -88,9 +97,34 @@ def process_image(image_id):
         
         objects = []
         bbox_image = img.copy()
-        if algorithm != 'manual':
+        if algorithm == 'hough':
+            # Draw circles on the bbox_image for Hough Circle Transform
+            circles = cv2.HoughCircles(cv2.cvtColor(img, cv2.COLOR_BGR2GRAY), cv2.HOUGH_GRADIENT,
+                                    dp=dp, minDist=min_dist, param1=50, param2=30,
+                                    minRadius=min_radius, maxRadius=max_radius)
+            if circles is not None:
+                circles = np.round(circles[0, :]).astype("int")
+                for index, (x, y, r) in enumerate(circles, start=1):
+                    object_id = f"{image_id}_{len(objects) + 1}"
+                    object_detection = ObjectDetection(
+                        image_id=image_id,
+                        object_id=object_id,
+                        bbox=[int(x - r), int(y - r), int(2 * r), int(2 * r)],
+                        centroid=[int(x), int(y)],
+                        radius=int(r)
+                    )
+                    db.session.add(object_detection)
+                    objects.append({
+                        'id': object_id,
+                        'bbox': [int(x - r), int(y - r), int(2 * r), int(2 * r)],
+                        'centroid': [int(x), int(y)],
+                        'radius': int(r)
+                    })
+                    cv2.circle(bbox_image, (x, y), r, (0, 255, 0), 2)
+                    cv2.putText(bbox_image, str(index), (x, y), cv2.FONT_HERSHEY_SIMPLEX, 2, (23, 247, 23), 5)
+        elif algorithm != 'manual':
             contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-            for cnt in contours:
+            for index, cnt in enumerate(contours, start=1):
                 if cv2.contourArea(cnt) > 100:
                     (x, y), radius = cv2.minEnclosingCircle(cnt)
                     center = (int(x), int(y))
@@ -111,8 +145,9 @@ def process_image(image_id):
                         'radius': radius
                     })
                     cv2.circle(bbox_image, center, radius, (0, 255, 0), 2)
+                    cv2.putText(bbox_image, str(index), (center[0], center[1]), cv2.FONT_HERSHEY_SIMPLEX, 2, (23, 247, 23), 5)
         else:
-            for annotation in annotations:
+            for index, annotation in enumerate(annotations, start=1):
                 x, y, width, height = annotation['bbox']
                 center = (x + width // 2, y + height // 2)
                 radius = min(width, height) // 2
@@ -132,6 +167,7 @@ def process_image(image_id):
                     'radius': radius
                 })
                 cv2.rectangle(bbox_image, (x, y), (x + width, y + height), (0, 255, 0), 2)
+                cv2.putText(bbox_image, str(index), (center[0], center[1]), cv2.FONT_HERSHEY_SIMPLEX, 2, (23, 247, 23), 5)
         
         db.session.commit()
         

@@ -14,18 +14,20 @@ def manual_circle_mask(image, annotations):
     return mask
 
 
-def hough_circle_detection(image):
+def hough_circle_detection(image, min_radius, max_radius, dp, min_dist):
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     blur = cv2.GaussianBlur(gray, (9, 9), 0)
     equalized = cv2.equalizeHist(blur)
     edges = cv2.Canny(equalized, 50, 150)
-    circles = cv2.HoughCircles(edges, cv2.HOUGH_GRADIENT, dp=1.2, minDist=50, param1=50, param2=30, minRadius=10, maxRadius=100)
+    circles = cv2.HoughCircles(edges, cv2.HOUGH_GRADIENT, dp=dp, minDist=min_dist,
+                               param1=50, param2=30, minRadius=min_radius, maxRadius=max_radius)
     mask = np.zeros_like(gray)  # Create a single-channel mask image
     if circles is not None:
         circles = np.round(circles[0, :]).astype("int")
         for (x, y, r) in circles:
             cv2.circle(mask, (x, y), r, (255, 255, 255), -1)
     return mask
+
 
 def contour_based_segmentation(image):
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
