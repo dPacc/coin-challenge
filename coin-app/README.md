@@ -67,7 +67,7 @@ Once the containers are up and running, you can access the application through t
 
 - Frontend: `http://localhost:3000`
 - Backend API: `http://localhost:8000`
-- Adminer (Database Management): `http://localhost:8082`
+- Adminer (Database Management): `http://localhost:8080`
 
 The frontend provides a user interface for uploading images, processing them to detect circular objects, and visualizing the results. The backend API can be accessed directly for programmatic interaction.
 
