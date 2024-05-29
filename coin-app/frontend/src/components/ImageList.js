@@ -81,7 +81,7 @@ const ImageList = () => {
             `${process.env.REACT_APP_API_URL}/delete/${imageId}`
           );
           message.success("Image deleted successfully");
-          fetchImages(); // Refresh the list after deletion
+          fetchImages();
         } catch (error) {
           message.error("Failed to delete the image");
         }
@@ -92,6 +92,7 @@ const ImageList = () => {
   return (
     <div style={{ maxWidth: "100%", overflow: "auto" }}>
       <Title level={2}>Uploaded Images</Title>
+
       {loading ? (
         <Spin
           size="large"
@@ -156,11 +157,18 @@ const ImageList = () => {
           style={{ width: "100%", maxHeight: "200px", objectFit: "contain" }}
         />
         <Row gutter={16} style={{ marginTop: 16 }}>
+          {/* Circular Objects */}
           <Col span={12} style={{ overflow: "auto", maxHeight: 300 }}>
             <Title level={4}>Circular Objects</Title>
-            <Button onClick={() => fetchObjects(selectedImage.id)}>
+            <Button
+              onClick={() => fetchObjects(selectedImage.id)}
+              type="primary"
+              size="small"
+            >
               Retrieve Objects
             </Button>
+
+            {/* Circular Objects List */}
             {objects.length > 0 && (
               <List
                 itemLayout="horizontal"
@@ -173,15 +181,21 @@ const ImageList = () => {
                       </Button>,
                     ]}
                   >
-                    <List.Item.Meta
-                      title={`Object ID: ${item.id}`}
-                      description={`Bounding Box: ${JSON.stringify(item.bbox)}`}
-                    />
+                    <div>
+                      <p>
+                        <b>Object ID:</b> {item.id}
+                      </p>
+                      <p>
+                        <b>Bounding Box:</b> {JSON.stringify(item.bbox)}
+                      </p>
+                    </div>
                   </List.Item>
                 )}
               />
             )}
           </Col>
+
+          {/* Circular Object Details */}
           <Col span={12}>
             {objectDetailsLoading ? (
               <Spin
@@ -195,10 +209,18 @@ const ImageList = () => {
             ) : selectedObject ? (
               <div>
                 <Title level={5}>Details of Selected Object</Title>
-                <p>Object ID: {selectedObject.id}</p>
-                <p>Bounding Box: {JSON.stringify(selectedObject.bbox)}</p>
-                <p>Centroid: {JSON.stringify(selectedObject.centroid)}</p>
-                <p>Radius: {selectedObject.radius}</p>
+                <p>
+                  <b>Object ID:</b> {selectedObject.id}
+                </p>
+                <p>
+                  <b>Bounding Box:</b> {JSON.stringify(selectedObject.bbox)}
+                </p>
+                <p>
+                  <b>Centroid:</b> {JSON.stringify(selectedObject.centroid)}
+                </p>
+                <p>
+                  <b>Radius:</b> {selectedObject.radius}
+                </p>
               </div>
             ) : (
               <Text type="secondary">Select an object to view details.</Text>

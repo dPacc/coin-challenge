@@ -174,8 +174,6 @@ def get_objects(image_id):
         object_list.append({
             'id': obj.object_id,
             'bbox': obj.bbox,
-            'centroid': obj.centroid,
-            'radius': obj.radius
         })
     return jsonify(object_list)
 
