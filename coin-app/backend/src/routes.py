@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from src import db
 from .models import Image, ObjectDetection
-from .utils import manual_circle_mask, hough_circle_detection, threshold_segmentation, contour_based_segmentation, evaluate_model
+from .utils import manual_circle_mask, hough_circle_detection, contour_based_segmentation, evaluate_model
 import cv2
 import numpy as np
 import base64
@@ -81,8 +81,6 @@ def process_image(image_id):
             mask = manual_circle_mask(img, annotations)
         elif algorithm == 'hough':
             mask = hough_circle_detection(img)
-        elif algorithm == 'threshold':
-            mask = threshold_segmentation(img)
         elif algorithm == 'contour':
             mask = contour_based_segmentation(img)
         else:

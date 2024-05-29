@@ -139,7 +139,6 @@ const UploadImage = () => {
           >
             <Option value="manual">Manual</Option>
             <Option value="hough">Hough Transform</Option>
-            <Option value="threshold">Threshold</Option>
             <Option value="contour">Contour</Option>
           </Select>
           <Button

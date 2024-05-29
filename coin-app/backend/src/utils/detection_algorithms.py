@@ -27,11 +27,6 @@ def hough_circle_detection(image):
             cv2.circle(mask, (x, y), r, (255, 255, 255), -1)
     return mask
 
-def threshold_segmentation(image):
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    _, mask = cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY_INV)
-    return mask
-
 def contour_based_segmentation(image):
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     blur = cv2.GaussianBlur(gray, (5, 5), 0)
